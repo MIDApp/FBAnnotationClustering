@@ -198,8 +198,38 @@ CGFloat FBCellSizeForZoomScale(double zoomScale)
 
 - (void)displayAnnotations:(NSArray *)annotations onMapView:(MGLMapView *)mapView
 {
+    NSOperationQueue *queue = [NSOperationQueue currentQueue];
+    [[NSOperationQueue mainQueue] addOperationWithBlock:^{
+        
+        NSArray *oldAnnotations = mapView.annotations;
+        if (queue)
+        {
+            [queue addOperationWithBlock:^{
+                
+                [self displayAnnotations:annotations
+                    replacingAnnotations:oldAnnotations
+                               onMapView:mapView];
+            }];
+        }
+        else
+        {
+            [self displayAnnotations:annotations
+                replacingAnnotations:oldAnnotations
+                           onMapView:mapView];
+        }
+    }];
+}
+
+- (void)displayAnnotations:(NSArray *)annotations
+      replacingAnnotations:(NSArray *)oldAnnotations
+                 onMapView:(MGLMapView *)mapView
+{
+    if (!annotations.count && !oldAnnotations.count)
+    {
+        return;
+    }
     // Only consider Annotations in mapView that are managed by BFClusteringManager
-    NSArray *filteredAnnotations = [mapView.annotations filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(id  _Nullable evaluatedObject, NSDictionary<NSString *,id> * _Nullable bindings) {
+    NSArray *filteredAnnotations = [oldAnnotations filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(id  _Nullable evaluatedObject, NSDictionary<NSString *,id> * _Nullable bindings) {
         
         return [self.types containsObject:[evaluatedObject class]];
     }]];
