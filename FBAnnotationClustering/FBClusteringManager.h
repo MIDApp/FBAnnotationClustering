@@ -70,16 +70,16 @@
 /**
  Method that return array of your custom annotations or annotation clusters.
  
- @param rect An instance of MKMapRect.
- @param zoomScale An instance of MKMapRect.
+ @param rect An instance of MGLCoordinateBounds.
+ @param zoomScale An instance of MGLCoordinateBounds.
  @returns Array of annotations objects of type @c FBAnnotationCluster or your custom class.
  */
-- (NSArray *)clusteredAnnotationsWithinMapRect:(MKMapRect)rect
+- (NSArray *)clusteredAnnotationsWithinCoordinateBounds:(MGLCoordinateBounds)rect
                                  withZoomScale:(double)zoomScale;
 
-- (NSArray *)clusteredAnnotationsWithinMapRect:(MKMapRect)rect
+- (NSArray *)clusteredAnnotationsWithinCoordinateBounds:(MGLCoordinateBounds)rect
                                  withZoomScale:(double)zoomScale
-                                 withFilter:(BOOL (^)(id<MKAnnotation>)) filter;
+                                 withFilter:(BOOL (^)(id<MGLAnnotation>)) filter;
 
 /**
  All annotations in quad tree.
@@ -91,11 +91,11 @@
 /**
  Method that will update map with new annotations.
  @param annotations Array of new annotation objects.
- @param mapView An instance of MKMapView
+ @param mapView An instance of MGLMapView
  
  @discussion This method will remove only annotations that are on the map, but are not in the new array of annotations. Only new annotations will be added on the map. Annotations that are already on the map will not be updated.
  */
 - (void)displayAnnotations:(NSArray *)annotations
-                 onMapView:(MKMapView *)mapView;
+                 onMapView:(MGLMapView *)mapView;
 
 @end

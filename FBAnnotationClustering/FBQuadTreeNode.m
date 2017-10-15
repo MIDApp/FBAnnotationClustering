@@ -8,6 +8,8 @@
 
 #import "FBQuadTreeNode.h"
 
+FBBoundingBox const FBBoundingBoxWorld = (FBBoundingBox){ -90., -180., 90., 180. };
+
 @implementation FBQuadTreeNode
 
 - (id)init
@@ -69,26 +71,28 @@ FBBoundingBox FBBoundingBoxMake(CGFloat x0, CGFloat y0, CGFloat xf, CGFloat yf)
     return box;
 }
 
-FBBoundingBox FBBoundingBoxForMapRect(MKMapRect mapRect)
+FBBoundingBox FBBoundingBoxForCoordinateBounds(MGLCoordinateBounds coordinateBounds)
 {
-    CLLocationCoordinate2D topLeft = MKCoordinateForMapPoint(mapRect.origin);
-    CLLocationCoordinate2D botRight = MKCoordinateForMapPoint(MKMapPointMake(MKMapRectGetMaxX(mapRect), MKMapRectGetMaxY(mapRect)));
+    CLLocationCoordinate2D ne = coordinateBounds.ne;
+    CLLocationCoordinate2D sw = coordinateBounds.sw;
     
-    CLLocationDegrees minLat = botRight.latitude;
-    CLLocationDegrees maxLat = topLeft.latitude;
+    CLLocationDegrees minLat = sw.latitude;
+    CLLocationDegrees maxLat = ne.latitude;
     
-    CLLocationDegrees minLon = topLeft.longitude;
-    CLLocationDegrees maxLon = botRight.longitude;
+    CLLocationDegrees minLon = sw.longitude;
+    CLLocationDegrees maxLon = ne.longitude;
     
     return FBBoundingBoxMake(minLat, minLon, maxLat, maxLon);
 }
 
-MKMapRect FBMapRectForBoundingBox(FBBoundingBox boundingBox)
+MGLCoordinateBounds FBCoordinateBoundsForBoundingBox(FBBoundingBox boundingBox)
 {
-    MKMapPoint topLeft = MKMapPointForCoordinate(CLLocationCoordinate2DMake(boundingBox.x0, boundingBox.y0));
-    MKMapPoint botRight = MKMapPointForCoordinate(CLLocationCoordinate2DMake(boundingBox.xf, boundingBox.yf));
+    CLLocationCoordinate2D sw, ne;
     
-    return MKMapRectMake(topLeft.x, botRight.y, fabs(botRight.x - topLeft.x), fabs(botRight.y - topLeft.y));
+    sw = CLLocationCoordinate2DMake(boundingBox.x0, boundingBox.y0);
+    ne = CLLocationCoordinate2DMake(boundingBox.xf, boundingBox.yf);
+    
+    return MGLCoordinateBoundsMake(sw, ne);
 }
 
 BOOL FBBoundingBoxContainsCoordinate(FBBoundingBox box, CLLocationCoordinate2D coordinate)

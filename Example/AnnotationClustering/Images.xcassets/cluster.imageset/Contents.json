@@ -1,0 +1,23 @@
+{
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  },
+  "images" : [
+    {
+      "filename" : "cluster~universal@1x.png",
+      "idiom" : "universal",
+      "scale" : "1x"
+    },
+    {
+      "filename" : "cluster~universal@2x.png",
+      "idiom" : "universal",
+      "scale" : "2x"
+    },
+    {
+      "filename" : "cluster~universal@3x.png",
+      "idiom" : "universal",
+      "scale" : "3x"
+    }
+  ]
+}

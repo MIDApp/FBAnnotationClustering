@@ -1,3 +1,7 @@
+
+platform :ios, "9.0"
+
 target "AnnotationClustering" do
 	pod "FBAnnotationClustering", :path => "../FBAnnotationClustering.podspec"
+    pod "Mapbox-iOS-SDK"
 end

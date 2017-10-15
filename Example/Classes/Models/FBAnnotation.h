@@ -7,11 +7,11 @@
 //
 
 #import <Foundation/Foundation.h>
-@import MapKit;
+@import Mapbox;
 
 // My custom annotation objects
 
-@interface FBAnnotation : NSObject <MKAnnotation>
+@interface FBAnnotation : NSObject <MGLAnnotation>
 
 @property (nonatomic, assign) CLLocationCoordinate2D coordinate;
 

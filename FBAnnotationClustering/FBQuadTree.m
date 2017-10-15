@@ -14,22 +14,22 @@
 {
     self = [super init];
     if (self) {
-        self.rootNode = [[FBQuadTreeNode alloc] initWithBoundingBox:FBBoundingBoxForMapRect(MKMapRectWorld)];
+        self.rootNode = [[FBQuadTreeNode alloc] initWithBoundingBox:FBBoundingBoxWorld];
     }
     return self;
 }
 
-- (BOOL)insertAnnotation:(id<MKAnnotation>)annotation
+- (BOOL)insertAnnotation:(id<MGLAnnotation>)annotation
 {
     return [self insertAnnotation:annotation toNode:self.rootNode];
 }
 
-- (BOOL)removeAnnotation:(id<MKAnnotation>)annotation
+- (BOOL)removeAnnotation:(id<MGLAnnotation>)annotation
 {
     return [self removeAnnotation:annotation fromNode:self.rootNode];
 }
 
-- (BOOL)removeAnnotation:(id<MKAnnotation>)annotation fromNode:(FBQuadTreeNode *)node
+- (BOOL)removeAnnotation:(id<MGLAnnotation>)annotation fromNode:(FBQuadTreeNode *)node
 {
     if (!FBBoundingBoxContainsCoordinate(node.boundingBox, [annotation coordinate])) {
         return NO;
@@ -50,7 +50,7 @@
 }
 
 
-- (BOOL)insertAnnotation:(id<MKAnnotation>)annotation toNode:(FBQuadTreeNode *)node
+- (BOOL)insertAnnotation:(id<MGLAnnotation>)annotation toNode:(FBQuadTreeNode *)node
 {
     if (!FBBoundingBoxContainsCoordinate(node.boundingBox, [annotation coordinate])) {
         return NO;
@@ -73,17 +73,17 @@
     return NO;
 }
 
-- (void)enumerateAnnotationsInBox:(FBBoundingBox)box usingBlock:(void (^)(id<MKAnnotation>))block
+- (void)enumerateAnnotationsInBox:(FBBoundingBox)box usingBlock:(void (^)(id<MGLAnnotation>))block
 {
     [self enumerateAnnotationsInBox:box withNode:self.rootNode usingBlock:block];
 }
 
-- (void)enumerateAnnotationsUsingBlock:(void (^)(id<MKAnnotation>))block
+- (void)enumerateAnnotationsUsingBlock:(void (^)(id<MGLAnnotation>))block
 {
-    [self enumerateAnnotationsInBox:FBBoundingBoxForMapRect(MKMapRectWorld) withNode:self.rootNode usingBlock:block];
+    [self enumerateAnnotationsInBox:FBBoundingBoxWorld withNode:self.rootNode usingBlock:block];
 }
 
-- (void)enumerateAnnotationsInBox:(FBBoundingBox)box withNode:(FBQuadTreeNode*)node usingBlock:(void (^)(id<MKAnnotation>))block
+- (void)enumerateAnnotationsInBox:(FBBoundingBox)box withNode:(FBQuadTreeNode*)node usingBlock:(void (^)(id<MGLAnnotation>))block
 {
     if (!FBBoundingBoxIntersectsBoundingBox(node.boundingBox, box)) {
         return;
@@ -91,7 +91,7 @@
     
     NSArray *tempArray = [node.annotations copy];
     
-    for (id<MKAnnotation> annotation in tempArray) {
+    for (id<MGLAnnotation> annotation in tempArray) {
         if (FBBoundingBoxContainsCoordinate(box, [annotation coordinate])) {
             block(annotation);
         }

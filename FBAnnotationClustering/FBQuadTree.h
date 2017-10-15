@@ -21,22 +21,22 @@
 /**
  Insert new annotation in tree.
  */
-- (BOOL)insertAnnotation:(id<MKAnnotation>)annotation;
+- (BOOL)insertAnnotation:(id<MGLAnnotation>)annotation;
 
 /**
  Remove an annotation from the tree.
  */
-- (BOOL)removeAnnotation:(id<MKAnnotation>)annotation;
+- (BOOL)removeAnnotation:(id<MGLAnnotation>)annotation;
 
 /**
  Enumerate annotations in @c box.
  */
-- (void)enumerateAnnotationsInBox:(FBBoundingBox)box usingBlock:(void (^)(id<MKAnnotation> obj))block;
+- (void)enumerateAnnotationsInBox:(FBBoundingBox)box usingBlock:(void (^)(id<MGLAnnotation> obj))block;
 
 
 /**
  Enumerate all annotations.
  */
-- (void)enumerateAnnotationsUsingBlock:(void (^)(id<MKAnnotation> obj))block;
+- (void)enumerateAnnotationsUsingBlock:(void (^)(id<MGLAnnotation> obj))block;
 
 @end

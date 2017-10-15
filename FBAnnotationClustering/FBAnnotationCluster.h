@@ -7,13 +7,13 @@
 //
 
 #import <Foundation/Foundation.h>
-#import <MapKit/MapKit.h>
+#import <Mapbox/Mapbox.h>
 
 
 /**
  Class that is used to display annotation clusters.
  */
-@interface FBAnnotationCluster : NSObject <MKAnnotation>
+@interface FBAnnotationCluster : NSObject <MGLAnnotation>
 
 /// Coordinate of the annotation. It will always be set.
 @property (nonatomic, assign) CLLocationCoordinate2D coordinate;
@@ -25,6 +25,6 @@
 @property (nonatomic, copy) NSString *subtitle;
 
 /// Array of the annotations that are representer with this cluster.
-@property (nonatomic, strong) NSArray *annotations;
+@property (nonatomic, strong) NSArray <id <MGLAnnotation>> *annotations;
 
 @end

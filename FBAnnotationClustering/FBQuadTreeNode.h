@@ -7,7 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
-#import <MapKit/MapKit.h>
+#import <Mapbox/Mapbox.h>
 
 #define kNodeCapacity 8
 
@@ -18,10 +18,12 @@ typedef struct {
     CGFloat yf;
 } FBBoundingBox;
 
+extern FBBoundingBox const FBBoundingBoxWorld;
+
 FBBoundingBox FBBoundingBoxMake(CGFloat x0, CGFloat y0, CGFloat xf, CGFloat yf);
 
-FBBoundingBox FBBoundingBoxForMapRect(MKMapRect mapRect);
-MKMapRect FBMapRectForBoundingBox(FBBoundingBox boundingBox);
+FBBoundingBox FBBoundingBoxForCoordinateBounds(MGLCoordinateBounds coordinateBounds);
+MGLCoordinateBounds FBCoordinateBoundsForBoundingBox(FBBoundingBox boundingBox);
 
 BOOL FBBoundingBoxContainsCoordinate(FBBoundingBox box, CLLocationCoordinate2D coordinate);
 BOOL FBBoundingBoxIntersectsBoundingBox(FBBoundingBox box1, FBBoundingBox box2);

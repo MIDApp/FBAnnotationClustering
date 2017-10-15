@@ -1,14 +1,20 @@
 PODS:
-  - FBAnnotationClustering (0.1.2)
+  - FBAnnotationClustering (0.2.2):
+    - Mapbox-iOS-SDK
+  - Mapbox-iOS-SDK (3.6.4)
 
 DEPENDENCIES:
   - FBAnnotationClustering (from `../FBAnnotationClustering.podspec`)
+  - Mapbox-iOS-SDK
 
 EXTERNAL SOURCES:
   FBAnnotationClustering:
     :path: ../FBAnnotationClustering.podspec
 
 SPEC CHECKSUMS:
-  FBAnnotationClustering: 8be556cf48b27262acab01ad8419bc01703615e3
+  FBAnnotationClustering: 09680ccbcc36e204cf56204f48fc22d0e6d07d4f
+  Mapbox-iOS-SDK: 47847dd44285477e0dfffd0130f65c8a52823ada
 
-COCOAPODS: 0.37.1
+PODFILE CHECKSUM: 97a414320c8a699a1adeff3f946e173e06a534ff
+
+COCOAPODS: 1.3.1

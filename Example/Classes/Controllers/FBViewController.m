@@ -9,12 +9,12 @@
 #import "FBViewController.h"
 #import "FBAnnotation.h"
 
-#define kNUMBER_OF_LOCATIONS 1000
+#define kNUMBER_OF_LOCATIONS 50
 #define kFIRST_LOCATIONS_TO_REMOVE 50
 
 @interface FBViewController ()
 
-@property (weak, nonatomic) IBOutlet MKMapView *mapView;
+@property (weak, nonatomic) IBOutlet MGLMapView *mapView;
 @property (weak, nonatomic) IBOutlet UILabel *numberOfAnnotationsLabel;
 
 @property (nonatomic, assign) NSUInteger numberOfLocations;
@@ -40,11 +40,11 @@
     self.mapView.centerCoordinate = CLLocationCoordinate2DMake(0, 0);
     [self mapView:self.mapView regionDidChangeAnimated:NO];
 
-    NSMutableArray *annotationsToRemove = [[NSMutableArray alloc] init];
-    for (int i=0; i<kFIRST_LOCATIONS_TO_REMOVE; i++) {
-        [annotationsToRemove addObject:array[i]];
-    }
-    [self.clusteringManager removeAnnotations:annotationsToRemove];
+//    NSMutableArray *annotationsToRemove = [[NSMutableArray alloc] init];
+//    for (int i=0; i<kFIRST_LOCATIONS_TO_REMOVE; i++) {
+//        [annotationsToRemove addObject:array[i]];
+//    }
+//    [self.clusteringManager removeAnnotations:annotationsToRemove];
 }
 
 - (void)didReceiveMemoryWarning
@@ -53,41 +53,62 @@
     // Dispose of any resources that can be recreated.
 }
 
-#pragma mark - MKMapViewDelegate
+#pragma mark - MGLMapViewDelegate
 
-- (void)mapView:(MKMapView *)mapView regionDidChangeAnimated:(BOOL)animated
+- (void)mapView:(MGLMapView *)mapView regionDidChangeAnimated:(BOOL)animated
 {
+    double zoom = mapView.zoomLevel;
+    MGLCoordinateBounds mapBounds = mapView.visibleCoordinateBounds;
     [[NSOperationQueue new] addOperationWithBlock:^{
-        double scale = self.mapView.bounds.size.width / self.mapView.visibleMapRect.size.width;
-        NSArray *annotations = [self.clusteringManager clusteredAnnotationsWithinMapRect:mapView.visibleMapRect withZoomScale:scale];
+        NSArray *annotations = [self.clusteringManager clusteredAnnotationsWithinCoordinateBounds:mapBounds withZoomScale:zoom];
         
         [self.clusteringManager displayAnnotations:annotations onMapView:mapView];
     }];
 }
 
-- (MKAnnotationView *)mapView:(MKMapView *)mapView viewForAnnotation:(id<MKAnnotation>)annotation
+- (MGLAnnotationImage *)mapView:(MGLMapView *)mapView imageForAnnotation:(id<MGLAnnotation>)annotation
 {
-    static NSString *const AnnotatioViewReuseID = @"AnnotatioViewReuseID";
-    
-    MKPinAnnotationView *annotationView = (MKPinAnnotationView *)[mapView dequeueReusableAnnotationViewWithIdentifier:AnnotatioViewReuseID];
-    
-    if (!annotationView) {
-        annotationView = [[MKPinAnnotationView alloc] initWithAnnotation:annotation reuseIdentifier:AnnotatioViewReuseID];
-    }
+    MGLAnnotationImage *imageView;
     
     // This is how you can check if annotation is a cluster
-    if ([annotation isKindOfClass:[FBAnnotationCluster class]]) {
+    if ([annotation isKindOfClass:[FBAnnotationCluster class]])
+    {
         FBAnnotationCluster *cluster = (FBAnnotationCluster *)annotation;
         cluster.title = [NSString stringWithFormat:@"%lu", (unsigned long)cluster.annotations.count];
         
-        annotationView.pinColor = MKPinAnnotationColorGreen;
-        annotationView.canShowCallout = YES;
-    } else {
-        annotationView.pinColor = MKPinAnnotationColorRed;
-        annotationView.canShowCallout = NO;
+        static NSString *const ClusterReuseID = @"ClusterReuseID";
+        
+        imageView = [mapView dequeueReusableAnnotationImageWithIdentifier:ClusterReuseID];
+        
+        if (!imageView)
+        {
+            imageView = [MGLAnnotationImage annotationImageWithImage:[UIImage imageNamed:@"cluster"] reuseIdentifier:ClusterReuseID];
+            
+        }
+    }
+    else
+    {
+        static NSString *const UnclusteredReuseID = @"UnclusteredReuseID";
+        
+        imageView = [mapView dequeueReusableAnnotationImageWithIdentifier:UnclusteredReuseID];
+        
+        if (!imageView)
+        {
+            imageView = [MGLAnnotationImage annotationImageWithImage:[UIImage imageNamed:@"unclustered"] reuseIdentifier:UnclusteredReuseID];
+            imageView.enabled = NO;
+            
+        }
     }
     
-    return annotationView;
+    return imageView;
+}
+
+- (BOOL)mapView:(MGLMapView *)mapView annotationCanShowCallout:(id<MGLAnnotation>)annotation
+{
+    if ([annotation isKindOfClass:[FBAnnotationCluster class]])
+        return YES;
+    
+    return NO;
 }
 
 #pragma mark - FBClusterManager delegate - optional
@@ -115,14 +136,21 @@
 
 - (NSMutableArray *)randomLocationsWithCount:(NSUInteger)count
 {
+    srand48(time(NULL));
+    
     NSMutableArray *array = [NSMutableArray array];
     for (int i = 0; i < count; i++) {
         FBAnnotation *a = [[FBAnnotation alloc] init];
-        a.coordinate = CLLocationCoordinate2DMake(drand48() * 40 - 20, drand48() * 80 - 40);
+        a.coordinate = CLLocationCoordinate2DMake(midRand() * 90., midRand() * 180.);
         
         [array addObject:a];
     }
     return array;
+}
+
+double midRand()
+{
+    return (drand48() - 0.5) * 2.;
 }
 
 - (void)updateLabelText

@@ -9,6 +9,6 @@
 #import <UIKit/UIKit.h>
 #import <FBAnnotationClustering/FBAnnotationClustering.h>
 
-@interface FBViewController : UIViewController <MKMapViewDelegate, FBClusteringManagerDelegate>
+@interface FBViewController : UIViewController <MGLMapViewDelegate, FBClusteringManagerDelegate>
 
 @end

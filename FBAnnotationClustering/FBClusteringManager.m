@@ -13,16 +13,12 @@ static NSString * const kFBClusteringManagerLockName = @"co.infinum.clusteringLo
 
 #pragma mark - Utility functions
 
-NSInteger FBZoomScaleToZoomLevel(MKZoomScale scale)
+NSInteger FBZoomScaleToZoomLevel(double scale)
 {
-    double totalTilesAtMaxZoom = MKMapSizeWorld.width / 256.0;
-    NSInteger zoomLevelAtMaxZoom = log2(totalTilesAtMaxZoom);
-    NSInteger zoomLevel = MAX(0, zoomLevelAtMaxZoom + floor(log2f(scale) + 0.5));
-    
-    return zoomLevel;
+    return (NSInteger)floor(scale);
 }
 
-CGFloat FBCellSizeForZoomScale(MKZoomScale zoomScale)
+CGFloat FBCellSizeForZoomScale(double zoomScale)
 {
     NSInteger zoomLevel = FBZoomScaleToZoomLevel(zoomScale);
     
@@ -39,7 +35,7 @@ CGFloat FBCellSizeForZoomScale(MKZoomScale zoomScale)
             return 16;
             
         default:
-            return 88;
+            return zoomLevel > 19 ? 16 : 88;
     }
 }
 
@@ -85,7 +81,7 @@ CGFloat FBCellSizeForZoomScale(MKZoomScale zoomScale)
     }
 
     [self.lock lock];
-    for (id<MKAnnotation> annotation in annotations) {
+    for (id<MGLAnnotation> annotation in annotations) {
         
         if (![self.types containsObject:[annotation class]]) {
             [self.types addObject:[annotation class]];
@@ -103,44 +99,52 @@ CGFloat FBCellSizeForZoomScale(MKZoomScale zoomScale)
     }
 
     [self.lock lock];
-    for (id<MKAnnotation> annotation in annotations) {
+    for (id<MGLAnnotation> annotation in annotations) {
         [self.tree removeAnnotation:annotation];
     }
     [self.lock unlock];
 }
 
-- (NSArray *)clusteredAnnotationsWithinMapRect:(MKMapRect)rect withZoomScale:(double)zoomScale
+- (NSArray *)clusteredAnnotationsWithinCoordinateBounds:(MGLCoordinateBounds)rect withZoomScale:(double)zoomScale
 {
-    return [self clusteredAnnotationsWithinMapRect:rect withZoomScale:zoomScale withFilter:nil];
+    return [self clusteredAnnotationsWithinCoordinateBounds:rect
+                                              withZoomScale:zoomScale
+                                                 withFilter:nil];
 }
 
-- (NSArray *)clusteredAnnotationsWithinMapRect:(MKMapRect)rect withZoomScale:(double)zoomScale withFilter:(BOOL (^)(id<MKAnnotation>)) filter
+- (NSArray *)clusteredAnnotationsWithinCoordinateBounds:(MGLCoordinateBounds)rect
+                                          withZoomScale:(double)zoomScale
+                                             withFilter:(BOOL (^)(id<MGLAnnotation>)) filter
 {
     double cellSize = FBCellSizeForZoomScale(zoomScale);
     if ([self.delegate respondsToSelector:@selector(cellSizeFactorForCoordinator:)]) {
         cellSize *= [self.delegate cellSizeFactorForCoordinator:self];
     }
-    double scaleFactor = zoomScale / cellSize;
     
-    NSInteger minX = floor(MKMapRectGetMinX(rect) * scaleFactor);
-    NSInteger maxX = floor(MKMapRectGetMaxX(rect) * scaleFactor);
-    NSInteger minY = floor(MKMapRectGetMinY(rect) * scaleFactor);
-    NSInteger maxY = floor(MKMapRectGetMaxY(rect) * scaleFactor);
+    FBBoundingBox mapBox = FBBoundingBoxForCoordinateBounds(rect);
+    CLLocationDegrees delta = mapBox.xf - mapBox.x0;
+    delta *= cellSize/375.;
     
     NSMutableArray *clusteredAnnotations = [[NSMutableArray alloc] init];
     
     [self.lock lock];
-    for (NSInteger x = minX; x <= maxX; x++) {
-        for (NSInteger y = minY; y <= maxY; y++) {
-            MKMapRect mapRect = MKMapRectMake(x/scaleFactor, y/scaleFactor, 1.0/scaleFactor, 1.0/scaleFactor);
-            FBBoundingBox mapBox = FBBoundingBoxForMapRect(mapRect);
-            
+    FBBoundingBox currentMapBox  = FBBoundingBoxMake(0., 0., 0., 0.);
+    
+    currentMapBox.y0 = mapBox.y0;
+    currentMapBox.yf = currentMapBox.y0 + delta;
+    
+    do
+    {
+        currentMapBox.x0 = mapBox.x0;
+        currentMapBox.xf = currentMapBox.x0 + delta;
+        do
+        {
             __block double totalLatitude = 0;
             __block double totalLongitude = 0;
             
             NSMutableArray *annotations = [[NSMutableArray alloc] init];
 
-            [self.tree enumerateAnnotationsInBox:mapBox usingBlock:^(id<MKAnnotation> obj) {
+            [self.tree enumerateAnnotationsInBox:currentMapBox usingBlock:^(id<MGLAnnotation> obj) {
                 
                 if(!filter || (filter(obj) == TRUE))
                 {
@@ -151,19 +155,29 @@ CGFloat FBCellSizeForZoomScale(MKZoomScale zoomScale)
             }];
             
             NSInteger count = [annotations count];
-            if (count == 1) {
+            static const NSInteger minAnnotationsCountToCluster = 2;
+            if (count < minAnnotationsCountToCluster) {
                 [clusteredAnnotations addObjectsFromArray:annotations];
             }
             
-            if (count > 1) {
+            if (count >= minAnnotationsCountToCluster) {
                 CLLocationCoordinate2D coordinate = CLLocationCoordinate2DMake(totalLatitude/count, totalLongitude/count);
                 FBAnnotationCluster *cluster = [[FBAnnotationCluster alloc] init];
                 cluster.coordinate = coordinate;
                 cluster.annotations = annotations;
                 [clusteredAnnotations addObject:cluster];
             }
+        
+            currentMapBox.x0 += delta;
+            currentMapBox.xf += delta;
         }
+        while (currentMapBox.x0 <= mapBox.xf);
+        
+        currentMapBox.y0 += delta;
+        currentMapBox.yf += delta;
     }
+    while (currentMapBox.y0 <= mapBox.yf);
+    
     [self.lock unlock];
     
     return [NSArray arrayWithArray:clusteredAnnotations];
@@ -174,7 +188,7 @@ CGFloat FBCellSizeForZoomScale(MKZoomScale zoomScale)
     NSMutableArray *annotations = [[NSMutableArray alloc] init];
     
     [self.lock lock];
-    [self.tree enumerateAnnotationsUsingBlock:^(id<MKAnnotation> obj) {
+    [self.tree enumerateAnnotationsUsingBlock:^(id<MGLAnnotation> obj) {
         [annotations addObject:obj];
     }];
     [self.lock unlock];
@@ -182,7 +196,7 @@ CGFloat FBCellSizeForZoomScale(MKZoomScale zoomScale)
     return annotations;
 }
 
-- (void)displayAnnotations:(NSArray *)annotations onMapView:(MKMapView *)mapView
+- (void)displayAnnotations:(NSArray *)annotations onMapView:(MGLMapView *)mapView
 {
     // Only consider Annotations in mapView that are managed by BFClusteringManager
     NSArray *filteredAnnotations = [mapView.annotations filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(id  _Nullable evaluatedObject, NSDictionary<NSString *,id> * _Nullable bindings) {
