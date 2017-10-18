@@ -45,7 +45,7 @@ CGFloat FBCellSizeForZoomScale(double zoomScale)
 
 @property (nonatomic, strong) FBQuadTree *tree;
 @property (nonatomic, strong) NSRecursiveLock *lock;
-@property (nonatomic, strong) NSMutableSet *types;
+@property (nonatomic, strong) NSSet *oldAnnotations;
 
 @end
 
@@ -62,7 +62,6 @@ CGFloat FBCellSizeForZoomScale(double zoomScale)
     self = [super init];
     if (self) {
         _lock = [NSRecursiveLock new];
-        _types = [NSMutableSet setWithObject:[FBAnnotationCluster class]];
         [self addAnnotations:annotations];
     }
     return self;
@@ -82,10 +81,6 @@ CGFloat FBCellSizeForZoomScale(double zoomScale)
 
     [self.lock lock];
     for (id<MGLAnnotation> annotation in annotations) {
-        
-        if (![self.types containsObject:[annotation class]]) {
-            [self.types addObject:[annotation class]];
-        }
         
         [self.tree insertAnnotation:annotation];
     }
@@ -196,45 +191,15 @@ CGFloat FBCellSizeForZoomScale(double zoomScale)
     return annotations;
 }
 
-- (void)displayAnnotations:(NSArray *)annotations onMapView:(MGLMapView *)mapView
-{
-    NSOperationQueue *queue = [NSOperationQueue currentQueue];
-    [[NSOperationQueue mainQueue] addOperationWithBlock:^{
-        
-        NSArray *oldAnnotations = mapView.annotations;
-        if (queue)
-        {
-            [queue addOperationWithBlock:^{
-                
-                [self displayAnnotations:annotations
-                    replacingAnnotations:oldAnnotations
-                               onMapView:mapView];
-            }];
-        }
-        else
-        {
-            [self displayAnnotations:annotations
-                replacingAnnotations:oldAnnotations
-                           onMapView:mapView];
-        }
-    }];
-}
-
 - (void)displayAnnotations:(NSArray *)annotations
-      replacingAnnotations:(NSArray *)oldAnnotations
                  onMapView:(MGLMapView *)mapView
 {
-    if (!annotations.count && !oldAnnotations.count)
+    if (!annotations.count && !self.oldAnnotations.count)
     {
         return;
     }
-    // Only consider Annotations in mapView that are managed by BFClusteringManager
-    NSArray *filteredAnnotations = [oldAnnotations filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(id  _Nullable evaluatedObject, NSDictionary<NSString *,id> * _Nullable bindings) {
-        
-        return [self.types containsObject:[evaluatedObject class]];
-    }]];
     
-    NSMutableSet *before = [NSMutableSet setWithArray:filteredAnnotations];
+    NSSet *before = self.oldAnnotations ?: [NSSet set];
     
     NSSet *after = [NSSet setWithArray:annotations];
     
@@ -246,6 +211,8 @@ CGFloat FBCellSizeForZoomScale(double zoomScale)
     
     NSMutableSet *toRemove = [NSMutableSet setWithSet:before];
     [toRemove minusSet:after];
+    
+    self.oldAnnotations = after;
     
     [[NSOperationQueue mainQueue] addOperationWithBlock:^{
         [mapView addAnnotations:[toAdd allObjects]];
